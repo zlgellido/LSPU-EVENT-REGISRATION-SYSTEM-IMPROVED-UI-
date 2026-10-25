@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui with context %}
+{% block title %}Admin dashboard · LSPU{% endblock %}
+{% block content %}
+{% set live_count = events|selectattr('status','in',['Ongoing','Lunch Break'])|list|length %}
+<section class="admin-intro">
+  <div class="heading"><div><small>ADMINISTRATION / OVERVIEW</small><h1>Good day, administrator<span>.</span></h1><p>Your overview of campus events, registrations, and system activity.</p></div><a class="btn btn-primary" href="{{ url_for('event_new') }}">{{ ui.ico('plus') }} Create event</a></div>
+  <div class="stats">
+    <div><span>Total events</span><b>{{ events|length+past|length }}</b><small class="stat-caption">{{ events|length }} active · {{ past|length }} archived</small></div>
+    <div class="{{ 'is-live' if live_count else '' }}"><span>Happening now</span><b>{{ live_count }}</b><small class="stat-caption">Ongoing or on lunch break</small></div>
+    <div><span>Total registrations</span><b>{{ registration_count }}</b><small class="stat-caption">Current system records</small></div>
+    <div><span>Student accounts</span><b>{{ student_count }}</b><small class="stat-caption">Registered students</small></div>
+  </div>
+  <div class="shortcuts">
+    <a class="shortcut shortcut-primary" href="{{ url_for('attendance_dashboard') }}"><span class="si">{{ ui.ico('in') }}</span><div><strong>Attendance desk</strong><span>Record time-in and time-out</span></div><span class="go">{{ ui.ico('arrow-ur') }}</span></a>
+    <a class="shortcut" href="{{ url_for('admin_directory') }}"><span class="si">{{ ui.ico('users') }}</span><div><strong>User directory</strong><span>Students and faculty by section</span></div><span class="go">{{ ui.ico('arrow-ur') }}</span></a>
+    <a class="shortcut" href="{{ url_for('event_new') }}"><span class="si">{{ ui.ico('plus') }}</span><div><strong>New event</strong><span>Schedule, capacity, and photo</span></div><span class="go">{{ ui.ico('arrow-ur') }}</span></a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><p class="section-overline">01 / EVENT OPERATIONS</p><h2>Active events</h2></div></div>
+  <div class="tablebox tablebox--menu"><table class="t-stack"><thead><tr><th>Event</th><th>Date</th><th>Registration</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+  {% for e in events %}
+  {% set confirmed = e.confirmed_count %}
+  <tr>
+    <td data-label="Event"><div class="cell-event"><span class="thumb">{{ ui.media(e) }}</span><div><strong>{{ e.title }}</strong><small>{{ e.venue }} · {{ e.program }}</small>{% if e.featured %}<span class="pill pill-gold" style="margin-top:6px">On main page</span>{% endif %}</div></div></td>
+    <td data-label="Date" class="date-cell">{{ ui.d(e.event_date) }}<small>{{ ui.t(e.start_time) }} to {{ ui.t(e.end_time) }}</small></td>
+    <td data-label="Registration" style="min-width:150px"><strong class="tnum">{{ confirmed }}/{{ e.capacity }}</strong><small>{{ e.waiting_count }} waiting</small><div style="margin-top:8px">{{ ui.meter(confirmed, e.capacity) }}</div></td>
+    <td data-label="Status">{{ ui.pill(e) }}</td>
+    <td data-label="Actions" class="actions">
+      <div class="row-actions">
+        <a class="btn btn-light btn-sm" href="{{ url_for('event_registrations', eid=e.id) }}">Registrations</a>
+        <a class="btn btn-light btn-sm" href="{{ url_for('expenses', eid=e.id) }}">Expenses</a>
+        <a class="btn btn-light btn-sm" href="{{ url_for('event_edit', eid=e.id) }}">Edit</a>
+        <details class="more">
+          <summary aria-label="More actions for {{ e.title }}">{{ ui.ico('dots') }}</summary>
+          <div class="menu-panel">
+            {% if e.featured %}
+            <form method="post" action="{{ url_for('event_unfeature', eid=e.id) }}">{{ ui.csrf() }}<button class="menu-item" type="submit">{{ ui.ico('pin2') }}Unpin spotlight</button></form>
+            {% else %}
+            <form method="post" action="{{ url_for('event_feature', eid=e.id) }}">{{ ui.csrf() }}<button class="menu-item" type="submit">{{ ui.ico('pin2') }}Pin to main page</button></form>
+            {% endif %}
+            {% if e.status=='Ended' %}
+            <form method="post" action="{{ url_for('event_archive', eid=e.id) }}">{{ ui.csrf() }}<button class="menu-item" type="submit">{{ ui.ico('archive') }}Archive event</button></form>
+            {% endif %}
+            <form method="post" action="{{ url_for('event_delete', eid=e.id) }}" data-confirm="“{{ e.title }}” will be deleted. Events that already have registrations or expenses cannot be deleted." data-confirm-title="Delete this event?" data-confirm-ok="Delete event">{{ ui.csrf() }}<button class="menu-item danger" type="submit">{{ ui.ico('trash') }}Delete event</button></form>
+          </div>
+        </details>
+      </div>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="5" class="no-label"><div class="table-empty"><strong>No active events.</strong><span>Create an event to start organizing campus activities.</span></div></td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><p class="section-overline">02 / FINANCIAL OVERVIEW</p><h2>Past events &amp; expenses</h2></div></div>
+  <div class="tablebox"><table class="t-stack"><thead><tr><th>Event</th><th>Date</th><th>Program</th><th>Participants</th><th>Total expenses</th><th>Breakdown</th></tr></thead><tbody>
+  {% for e in past %}<tr>
+    <td data-label="Event"><strong>{{ e.title }}</strong>{% if e.description %}<small>{{ e.description[:80] }}{{ '…' if e.description|length > 80 }}</small>{% endif %}</td>
+    <td data-label="Date" class="date-cell">{{ ui.d(e.event_date) }}</td>
+    <td data-label="Program"><span class="table-tag">{{ e.program }}</span></td>
+    <td data-label="Participants" class="tnum">{{ e.confirmed_count }}</td>
+    <td data-label="Expenses" class="money-cell">{{ ui.peso(e.total_expenses) }}</td>
+    <td data-label="Breakdown"><a class="btn btn-light btn-sm" href="{{ url_for('expenses', eid=e.id) }}">View details {{ ui.ico('arrow-ur') }}</a></td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="no-label"><div class="table-empty"><strong>No past events to show.</strong><span>Ended and archived events will appear here.</span></div></td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><p class="section-overline">03 / SYSTEM HEALTH</p><h2>Activity &amp; alerts</h2></div></div>
+  <div class="two admin-logs">
+    <section class="box"><div class="box-heading"><p class="section-overline">AUDIT TRAIL</p><h2>Recent activity</h2></div>{% for l in logs %}<div class="log"><b>{{ l.action }}</b><br>{{ l.details }}<small>{{ l.actor }} · {{ l.created_at.strftime('%m-%d %H:%M') }}</small></div>{% else %}<p class="muted-empty">No activity has been recorded yet.</p>{% endfor %}</section>
+    <section class="box"><div class="box-heading"><p class="section-overline">ATTENTION</p><h2>Warnings &amp; errors</h2></div>{% for l in alerts %}<div class="log alert-log"><b>{{ l.level }} · {{ l.action }}</b><br>{{ l.details }}<small>{{ l.created_at.strftime('%m-%d %H:%M') }}</small></div>{% else %}<p class="muted-empty">No warnings recorded.</p>{% endfor %}</section>
+  </div>
+</section>
+{% endblock %}

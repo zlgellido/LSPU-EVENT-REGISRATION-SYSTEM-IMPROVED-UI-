@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui with context %}
+{% block title %}Welcome · LSPU Event Management System{% endblock %}
+{% block content %}
+<section class="landing-hero">
+  <div class="hero-copy">
+    <div class="eyebrow"><span class="eyebrow-line"></span> LAGUNA STATE POLYTECHNIC UNIVERSITY</div>
+    <p class="hero-kicker">CAMPUS EVENT MANAGEMENT SYSTEM</p>
+    <h1>Campus life,<br><em>in motion.</em></h1>
+    <p class="hero-description">Discover what's happening on campus, register for events, and keep every campus experience in one place.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="{{ url_for('sign_in', role='student') }}">Student portal {{ ui.ico('arrow-ur', 'ico-go') }}</a>
+      <a class="btn btn-light" href="#portals">All portals</a>
+    </div>
+    <div class="hero-note"><span class="note-dot"></span> Your campus. Your community. Your next experience.</div>
+  </div>
+
+  <div class="featured-wrap">
+  <div class="featured-event-panel">
+    {% if featured_event %}
+      <div class="featured-media">
+        {% if featured_event.image_filename %}<img src="{{ url_for('static', filename='uploads/' ~ featured_event.image_filename) }}" alt="Photo for {{ featured_event.title }}">{% else %}<div class="art art-0 featured-spot" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2v7M12 15v7M2 12h7M15 12h7M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4"/></svg><strong>EVENT SPOTLIGHT</strong><small>YOUR CAMPUS · YOUR STORY</small></div>{% endif %}
+        <div class="featured-label"><span class="featured-live-dot"></span> FEATURED CAMPUS EVENT <span class="featured-index">LSPU / {{ '%02d'|format(featured_event.id) }}</span></div>
+      </div>
+      <div class="featured-event-content">
+        <p class="featured-event-date">{{ ui.dlong(featured_event.event_date) }} · {{ featured_event.venue }}</p>
+        <h2>{{ featured_event.title }}</h2>
+        <p>{{ featured_event.description or 'Join the LSPU community for this upcoming campus event.' }}</p>
+        <a class="btn btn-primary" href="{{ url_for('sign_in', role='student') }}">Explore event {{ ui.ico('arrow-ur', 'ico-go') }}</a>
+      </div>
+    {% else %}
+      <div class="featured-media">
+        <div class="art art-0 featured-spot" aria-hidden="true"><span class="featured-empty-title">What's happening<br>on campus?</span><small>EVENTS · PEOPLE · COMMUNITY</small></div>
+        <div class="featured-label">CAMPUS SPOTLIGHT <span class="featured-index">LSPU</span></div>
+      </div>
+      <div class="featured-event-content">
+        <p class="featured-event-date">THE LSPU CAMPUS CALENDAR</p>
+        <h2>Something worth showing up for.</h2>
+        <p>The next campus highlight will appear here when an administrator features an event.</p>
+      </div>
+    {% endif %}
+  </div>
+  </div>
+</section>
+
+<section class="journey" aria-label="How it works">
+  <div><span class="step-n">1</span><div><strong>Discover</strong><span>Browse campus events and see how many seats are left.</span></div></div>
+  <div><span class="step-n">2</span><div><strong>Register</strong><span>Confirm your details and reserve a seat, or join the waiting list.</span></div></div>
+  <div><span class="step-n">3</span><div><strong>Get your receipt</strong><span>Keep a printable confirmation for event verification.</span></div></div>
+  <div><span class="step-n">4</span><div><strong>Check in</strong><span>Organizers record your time-in and time-out at the attendance desk.</span></div></div>
+</section>
+
+<section class="portal-section" id="portals" aria-labelledby="portal-heading">
+  <div class="section-intro"><div><p class="eyebrow"><span class="eyebrow-line"></span> YOUR SPACE TO BEGIN</p><h2 id="portal-heading">Choose your portal<span>.</span></h2></div><p>Continue to the workspace designed for your role.</p></div>
+  <div class="portal-grid">
+    {% for role, desc in [('student', 'Discover campus activities, register for events, and keep your receipts in one place.'), ('professor', 'Access assigned sections and manage student roster exports.'), ('admin', 'Coordinate events, accounts, expenses, and system activity.')] %}
+    <a class="portal-card portal-{{ role }}" href="{{ url_for('sign_in', role=role) }}">
+      <div class="portal-card-top"><span class="portal-number">0{{ loop.index }}</span><span class="portal-icon">{{ ui.ico({'student':'cap','professor':'board','admin':'shield'}[role]) }}</span></div>
+      <div class="portal-card-copy"><p class="portal-overline">{{ {'student':'FOR STUDENTS','professor':'FOR FACULTY','admin':'FOR ADMINISTRATION'}[role] }}</p><h3>{{ role.title() }}</h3><p>{{ desc }}</p></div>
+      <div class="portal-card-bottom"><span>Enter portal</span><span class="portal-arrow">{{ ui.ico('arrow-ur') }}</span></div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+<section class="landing-footnote"><span class="footnote-mark">{{ ui.ico('spark') }}</span><p>Good things happen when a campus comes together.</p><span class="footnote-rule"></span></section>
+{% endblock %}
